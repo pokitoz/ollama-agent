@@ -1,0 +1,25 @@
+{
+    "claudeCode.environmentVariables": [
+        {
+            "name": "ANTHROPIC_BASE_URL",
+            "value": "http://localhost:8013"
+        },
+        {
+            "name": "ANTHROPIC_AUTH_TOKEN",
+            "value": "none"
+        },
+        {
+            "name": "ANTHROPIC_MODEL",
+            "value": "qwen3-coder-30b"
+        },
+        {
+            "name": "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+            "value": "qwen3-coder-30b"
+        },
+        {
+            "name": "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+            "value": "1"
+        }
+    ],
+    "claudeCode.disableLoginPrompt": true
+}
