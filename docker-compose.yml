@@ -1,0 +1,41 @@
+services:
+  ollama:
+    build: .
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT}:11434"
+    environment:
+      - OLLAMA_MODELS_TO_PULL=${OLLAMA_MODELS_TO_PULL}
+      - OLLAMA_CONTEXT_LENGTH=${OLLAMA_CONTEXT_LENGTH}
+      # smaller kv cache so the 7b fits in ~5GB of vram
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0
+    volumes:
+      - ollama-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # optional chat UI: docker compose --profile ui up -d
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    profiles: ["ui"]
+    ports:
+      - "${WEBUI_PORT}:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      - ollama
+
+volumes:
+  ollama-data:
+  open-webui-data:

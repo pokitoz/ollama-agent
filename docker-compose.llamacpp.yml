@@ -1,0 +1,87 @@
+# llama.cpp: one server for chat, one for autocomplete
+x-llamacpp: &llamacpp
+  build:
+    context: .
+    dockerfile: Dockerfile.llamacpp
+    args:
+      LLAMACPP_TAG: server-cuda
+  image: local/llamacpp:server-cuda
+  restart: unless-stopped
+  volumes:
+    - llamacpp-models:/models
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+services:
+  llamacpp-chat:
+    <<: *llamacpp
+    container_name: llamacpp-chat
+    ports:
+      - "${LLAMACPP_CHAT_PORT}:8080"
+    command:
+      - -hf
+      - ${LLAMACPP_CHAT_MODEL}
+      - --ctx-size
+      - ${LLAMACPP_CONTEXT_LENGTH}
+      - --n-gpu-layers
+      - "99"
+      # moe expert weights in RAM, the rest on the GPU (no effect on dense models)
+      - --n-cpu-moe
+      - ${LLAMACPP_CHAT_N_CPU_MOE}
+      - --jinja
+      # smaller kv cache, same as the ollama setup
+      - --cache-type-k
+      - q8_0
+      - --cache-type-v
+      - q8_0
+      # sampling recommended for qwen3-coder
+      - --temp
+      - "0.7"
+      - --top-p
+      - "0.8"
+      - --top-k
+      - "20"
+      - --repeat-penalty
+      - "1.05"
+
+  llamacpp-autocomplete:
+    <<: *llamacpp
+    container_name: llamacpp-autocomplete
+    ports:
+      - "${LLAMACPP_AUTOCOMPLETE_PORT}:8080"
+    command:
+      - -hf
+      - ${LLAMACPP_AUTOCOMPLETE_MODEL}
+      - --ctx-size
+      - "4096"
+      # on the CPU, the GPU is kept for the chat model
+      - --n-gpu-layers
+      - "0"
+      - --cache-reuse
+      - "256"
+
+  # optional chat UI: docker compose -f docker-compose.llamacpp.yml --profile ui up -d
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    profiles: ["ui"]
+    ports:
+      - "${WEBUI_PORT}:8080"
+    environment:
+      - ENABLE_OLLAMA_API=false
+      - OPENAI_API_BASE_URL=http://llamacpp-chat:8080/v1
+      - OPENAI_API_KEY=none
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      - llamacpp-chat
+
+volumes:
+  llamacpp-models:
+  open-webui-data:

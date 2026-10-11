@@ -1,0 +1,27 @@
+# no GPU
+services:
+  llamacpp-chat:
+    build:
+      args:
+        LLAMACPP_TAG: server
+    image: local/llamacpp:server
+    deploy: !reset {}
+    command:
+      - -hf
+      - ${LLAMACPP_CHAT_MODEL}
+      - --ctx-size
+      - ${LLAMACPP_CONTEXT_LENGTH}
+      - --jinja
+  llamacpp-autocomplete:
+    build:
+      args:
+        LLAMACPP_TAG: server
+    image: local/llamacpp:server
+    deploy: !reset {}
+    command:
+      - -hf
+      - ${LLAMACPP_AUTOCOMPLETE_MODEL}
+      - --ctx-size
+      - "4096"
+      - --cache-reuse
+      - "256"

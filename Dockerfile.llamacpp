@@ -1,0 +1,14 @@
+# server-cuda for GPU, server for CPU only
+ARG LLAMACPP_TAG=server-cuda
+FROM ghcr.io/ggml-org/llama.cpp:${LLAMACPP_TAG}
+
+# models downloaded with -hf land here
+ENV LLAMA_CACHE=/models
+ENV LLAMA_ARG_HOST=0.0.0.0
+ENV LLAMA_ARG_PORT=8080
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=15s --start-period=10m CMD curl -fs http://localhost:8080/health || exit 1
+
+# entrypoint is llama-server from the base image, args come from compose
